@@ -105,20 +105,84 @@ class Drawable{
 var tri;
 var plane;
 var cube;
+var skybox;
+var house;
 
+// Add these variable declarations
+var animal;
+var animalCamera;
+var modelPath = "models/bound-cow.smf"; // Path to your SMF model file
+
+// Update your window.onload function:
 window.onload = function init(){
-    canvas = document.getElementById( "gl-canvas" );
+    canvas = document.getElementById("gl-canvas");
     gl = canvas.getContext('webgl2');
-    if ( !gl ) { alert( "WebGL 2.0 isn't available" ); }
+    if (!gl) { alert("WebGL 2.0 isn't available"); }
 
-    gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
-	plane = new Plane(0, 0, 0, 10, 0, 0, 0);
-    cube = new Cube(0, 2, 0, 1, 0, 0, 0);
+    // Create skybox
+    skybox = new Skybox();
+    
+    // Create plane and house
+    plane = new Plane(0, 0, 0, 10, 0, 0, 0);
+    house = new House(2, 0, 2, 1, 0, 0, 0);
+    
+    // Initialize animal camera
+    animalCamera = new Camera(
+        vec3(0, 1, 4), // Position
+        vec3(1, 0, 0),  // U vector (right)
+        vec3(0, 1, 0),  // V vector (up)
+        vec3(0, 0, -1)  // N vector (looking direction)
+    );
+    
+    // Create animal model
+    animal = new SMFModel(gl, modelPath);
+    
     render();
 };
+
+var activeCamera = 1; 
+
+// Function to toggle between cameras
+function toggleCamera() {
+    activeCamera = activeCamera === 1 ? 2 : 1;
+}
+
+// Update render function to include the animal and camera selection
+function render() {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
+    // Choose the active camera
+    let currentCamera = activeCamera === 1 ? camera1 : animalCamera;
+    
+    // Position animalCamera to follow the animal
+    animalCamera.vrp = vec3(animal.tx, animal.ty + 0.5, animal.tz);
+    animalCamera.updateCameraMatrix();
+    
+    // Draw skybox with the selected camera
+    skybox.draw(currentCamera);
+    
+    // Draw plane and house
+    plane.draw();
+    house.draw();
+    
+    // Draw animal model
+    animal.draw(currentCamera);
+    
+    // Animate animal - move it in a circle
+    let time = Date.now() * 0.001; // Convert to seconds
+    let radius = 3.0; // Radius of circular path
+    animal.tx = radius * Math.cos(time * 0.5);
+    animal.tz = radius * Math.sin(time * 0.5);
+    animal.modelRotationY = (time * 30) % 360; // Rotate the animal
+    animal.updateModelMatrix();
+    
+    requestAnimationFrame(render);
+}
+
 
 window.addEventListener("keydown", function(event) {
     let moveSpeed = 0.5;
@@ -185,16 +249,12 @@ window.addEventListener("keydown", function(event) {
             camera1.u = vec3(tempU6[0], tempU6[1], tempU6[2]);
             camera1.n = vec3(tempN4[0], tempN4[1], tempN4[2]);
             break;
+        case "T":
+            toggleCamera();
+        case "t":
+            toggleCamera();
     }
 
     camera1.updateCameraMatrix();
 });
-
-function render() {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    plane.draw();
-    cube.draw();
-    requestAnimationFrame(render);
-}
-
 
