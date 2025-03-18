@@ -16,8 +16,24 @@
 
 </head>
 <body>
-<canvas id="gl-canvas" width="512" height="512">
-Not supported
-</canvas>
+<div style="position: relative;">
+    <canvas id="gl-canvas" width="512" height="512">
+    Not supported
+    </canvas>
+    <div id="camera-info" style="position: absolute; top: 10px; left: 10px; color: white; font-family: Arial; padding: 5px; background-color: rgba(0,0,0,0.5);">
+        Camera: First-Person View (Press 'T' to toggle view)
+    </div>
+</div>
+<div style="margin-top: 10px;">
+    <strong>Controls:</strong>
+    <ul>
+        <li>Arrow Keys: Move camera (works in both views)</li>
+        <li>W/S: Move top-down camera up/down (altitude)</li>
+        <li>Z/z: Roll first-person camera</li>
+        <li>X/x: Pitch first-person camera</li>
+        <li>C/c: Yaw first-person camera</li>
+        <li>T: Toggle between first-person and top-down views</li>
+    </ul>
+</div>
 </body>
 </html>

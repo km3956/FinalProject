@@ -61,10 +61,10 @@ var camera1 = new Camera(
 
 
 var camera2 = new Camera(
-    vec3(0, 10, 0),  // Position high above the scene
+    vec3(0, 25, 0),  // Position much higher above the scene
     vec3(1, 0, 0),   // Right direction
     vec3(0, 0, -1),  // Up direction
-    vec3(0, -1, 0)   // Looking downward
+    vec3(0, -1, 0)   // Looking directly downward
 );
 
 
@@ -78,6 +78,7 @@ var activeCamera = 1;
 var lastFrameTime = 0;
 var modelPath = "models/bound-cow.smf";
 var cowModel;
+var cameraIndicator;
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
@@ -96,7 +97,6 @@ window.onload = function init() {
     plane = new Plane(0, 0, 0, 10, 0, 0, 0);
     house = new House(2, 0, 2, 1, 0, 0, 0);
     
-
     cowModel = new SMFModel(
         gl,
         "models/bound-cow.smf", 
@@ -104,6 +104,18 @@ window.onload = function init() {
         0.5,                     
         0, 0, 0                  
     );
+    
+    // Create a camera indicator
+    cameraIndicator = new Circle(
+        gl,
+        0, 0, 0,     // Position will be updated based on active camera
+        0.5,         // Radius
+        0.0, 1.0, 0.0, 0.7  // Green, semi-transparent
+    );
+    
+    // Initialize both cameras
+    camera1.updateCameraMatrix();
+    camera2.updateCameraMatrix();
     
     render();
 };
@@ -120,10 +132,31 @@ function render() {
     house.modelRotationY += 30 * deltaTime;
     house.updateModelMatrix();
 
+    // Position the camera indicator based on which camera is active
+    if (activeCamera === 1) {
+        // Show indicator for camera 1 (positioned above camera1's position)
+        cameraIndicator.tx = camera1.vrp[0];
+        cameraIndicator.ty = camera1.vrp[1] + 1.5;
+        cameraIndicator.tz = camera1.vrp[2];
+    } else {
+        // Show indicator for camera 2 (positioned near the center of the scene for top-down view)
+        cameraIndicator.tx = 0;
+        cameraIndicator.ty = 1.0;
+        cameraIndicator.tz = 0;
+    }
+    cameraIndicator.updateModelMatrix();
+
+    // Draw scene from current camera's perspective
     cowModel.draw(currentCamera);
     skybox.draw(currentCamera);
     plane.draw(currentCamera);
     house.draw(currentCamera);
+    
+    // Draw camera indicator (only visible from the other camera's perspective)
+    if ((activeCamera === 1 && isValidVec3(camera2.vrp)) || 
+        (activeCamera === 2 && isValidVec3(camera1.vrp))) {
+        cameraIndicator.draw(currentCamera);
+    }
 
     requestAnimationFrame(render);
 }
@@ -132,19 +165,40 @@ function render() {
 window.addEventListener("keydown", function(event) {
     let moveSpeed = 0.5;
     let rotateSpeed = 5;
+    let currentCamera = (activeCamera === 1) ? camera1 : camera2;
 
     switch (event.key) {
         case "ArrowUp": 
-            camera1.vrp = add(camera1.vrp, scale(moveSpeed, camera1.n));
+            if (activeCamera === 1) {
+                camera1.vrp = add(camera1.vrp, scale(moveSpeed, camera1.n));
+            } else {
+                // Move top-down camera forward (negative Z)
+                camera2.vrp[2] -= moveSpeed;
+            }
             break;
         case "ArrowDown":
-            camera1.vrp = subtract(camera1.vrp, scale(moveSpeed, camera1.n));
+            if (activeCamera === 1) {
+                camera1.vrp = subtract(camera1.vrp, scale(moveSpeed, camera1.n));
+            } else {
+                // Move top-down camera backward (positive Z)
+                camera2.vrp[2] += moveSpeed;
+            }
             break;
         case "ArrowLeft":
-            camera1.vrp = subtract(camera1.vrp, scale(moveSpeed, camera1.u));
+            if (activeCamera === 1) {
+                camera1.vrp = subtract(camera1.vrp, scale(moveSpeed, camera1.u));
+            } else {
+                // Move top-down camera left (negative X)
+                camera2.vrp[0] -= moveSpeed;
+            }
             break;
         case "ArrowRight":
-            camera1.vrp = add(camera1.vrp, scale(moveSpeed, camera1.u));
+            if (activeCamera === 1) {
+                camera1.vrp = add(camera1.vrp, scale(moveSpeed, camera1.u));
+            } else {
+                // Move top-down camera right (positive X)
+                camera2.vrp[0] += moveSpeed;
+            }
             break;
         case "Z": 
             let rollCCW = rotate(rotateSpeed, camera1.n);
@@ -197,9 +251,34 @@ window.addEventListener("keydown", function(event) {
         case "t":
             activeCamera = (activeCamera === 1) ? 2 : 1;
             console.log("Switched to Camera", activeCamera);
+            
+            // Update the camera info text
+            let cameraInfoElement = document.getElementById("camera-info");
+            if (activeCamera === 1) {
+                console.log("Using first-person camera");
+                cameraInfoElement.textContent = "Camera: First-Person View (Press 'T' to toggle view)";
+            } else {
+                console.log("Using top-down camera");
+                cameraInfoElement.textContent = "Camera: Top-Down View (Press 'T' to toggle view)";
+            }
+            break;
+        case "w":
+            if (activeCamera === 2) {
+                // Move top-down camera up (increase Y)
+                camera2.vrp[1] += moveSpeed;
+            }
+            break;
+        case "s":
+            if (activeCamera === 2) {
+                // Move top-down camera down (decrease Y)
+                camera2.vrp[1] -= moveSpeed;
+            }
             break;
     }
 
-    camera1.updateCameraMatrix();
+    if (activeCamera === 1) {
+        camera1.updateCameraMatrix();
+    } else {
+        camera2.updateCameraMatrix();
+    }
 });
-

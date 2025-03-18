@@ -99,29 +99,26 @@ class Plane extends Drawable {
 
     draw(camera) {
         if (Plane.texture == -1) return;
-
+    
         gl.useProgram(Plane.shaderProgram);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, Plane.positionBuffer);
         gl.vertexAttribPointer(Plane.aPositionShader, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(Plane.aPositionShader);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, Plane.textureCoordBuffer);
         gl.vertexAttribPointer(Plane.aTextureCoordShader, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(Plane.aTextureCoordShader);
-
-
-        gl.uniformMatrix4fv(Plane.uCameraMatrixShader, false, flatten(camera.cameraMatrix));
-        gl.uniformMatrix4fv(Plane.uProjectionMatrixShader, false, flatten(camera.projectionMatrix));
-        
+    
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, Plane.texture);
         gl.uniform1i(Plane.uTextureUnitShader, 0);
-
+    
+        // Set uniform matrices using the provided camera parameter
         gl.uniformMatrix4fv(Plane.uModelMatrixShader, false, flatten(this.modelMatrix));
-        gl.uniformMatrix4fv(Plane.uCameraMatrixShader, false, flatten(camera1.cameraMatrix));
-        gl.uniformMatrix4fv(Plane.uProjectionMatrixShader, false, flatten(camera1.projectionMatrix));
-
+        gl.uniformMatrix4fv(Plane.uCameraMatrixShader, false, flatten(camera.cameraMatrix));
+        gl.uniformMatrix4fv(Plane.uProjectionMatrixShader, false, flatten(camera.projectionMatrix));
+    
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, Plane.indexBuffer);
         gl.drawElements(gl.TRIANGLES, Plane.indices.length, gl.UNSIGNED_SHORT, 0);
     }

@@ -50,27 +50,27 @@ class Cube extends Drawable {
         }
     }
 
-    draw() {
+    draw(camera) {
         if (Cube.texture == -1) return;
-
+    
         gl.useProgram(Cube.shaderProgram);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, Cube.positionBuffer);
         gl.vertexAttribPointer(Cube.aPositionShader, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(Cube.aPositionShader);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, Cube.textureCoordBuffer);
         gl.vertexAttribPointer(Cube.aTextureCoordShader, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(Cube.aTextureCoordShader);
-
+    
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, Cube.texture);
         gl.uniform1i(Cube.uTextureUnitShader, 0);
-
+    
         gl.uniformMatrix4fv(Cube.uModelMatrixShader, false, flatten(this.modelMatrix));
-        gl.uniformMatrix4fv(Cube.uCameraMatrixShader, false, flatten(camera1.cameraMatrix));
-        gl.uniformMatrix4fv(Cube.uProjectionMatrixShader, false, flatten(camera1.projectionMatrix));
-
+        gl.uniformMatrix4fv(Cube.uCameraMatrixShader, false, flatten(camera.cameraMatrix));
+        gl.uniformMatrix4fv(Cube.uProjectionMatrixShader, false, flatten(camera.projectionMatrix));
+    
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, Cube.indexBuffer);
         gl.drawElements(gl.TRIANGLES, Cube.indices.length, gl.UNSIGNED_SHORT, 0);
     }

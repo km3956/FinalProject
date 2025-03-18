@@ -193,25 +193,26 @@ class House extends Drawable {
 
     draw(camera) {
         if (House.texture == -1 || House.roofTexture == -1) return;
-
+    
         gl.useProgram(House.shaderProgram);
         this.modelRotationY += this.rotationSpeed * deltaTime;
         this.updateModelMatrix();
+        
         // Position
         gl.bindBuffer(gl.ARRAY_BUFFER, House.positionBuffer);
         gl.vertexAttribPointer(House.aPositionShader, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(House.aPositionShader);
-
+    
         // Normal
         gl.bindBuffer(gl.ARRAY_BUFFER, House.normalBuffer);
         gl.vertexAttribPointer(House.aNormalShader, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(House.aNormalShader);
-
+    
         // Texture coordinates
         gl.bindBuffer(gl.ARRAY_BUFFER, House.textureCoordBuffer);
         gl.vertexAttribPointer(House.aTextureCoordShader, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(House.aTextureCoordShader);
-
+    
         // Wall texture
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, House.texture);
@@ -221,15 +222,12 @@ class House extends Drawable {
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, House.roofTexture);
         gl.uniform1i(House.uRoofTextureUnitShader, 1);
-
+    
+        // Set uniforms using the provided camera parameter
+        gl.uniformMatrix4fv(House.uModelMatrixShader, false, flatten(this.modelMatrix));
         gl.uniformMatrix4fv(House.uCameraMatrixShader, false, flatten(camera.cameraMatrix));
         gl.uniformMatrix4fv(House.uProjectionMatrixShader, false, flatten(camera.projectionMatrix));
-
-        // Set uniforms
-        gl.uniformMatrix4fv(House.uModelMatrixShader, false, flatten(this.modelMatrix));
-        gl.uniformMatrix4fv(House.uCameraMatrixShader, false, flatten(camera1.cameraMatrix));
-        gl.uniformMatrix4fv(House.uProjectionMatrixShader, false, flatten(camera1.projectionMatrix));
-
+    
         // Draw walls (first part of indices)
         gl.uniform1i(House.uIsRoofShader, 0);  // Not roof
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, House.indexBuffer);
