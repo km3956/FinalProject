@@ -52,134 +52,79 @@ function isValidVec3(v) {
     return !(isNaN(v[0]) || isNaN(v[1]) || isNaN(v[2]));
 }
 
-
 var camera1 = new Camera(
-    vec3(0, 5, 5), 
-    vec3(1, 0, 0), 
-    vec3(0, Math.SQRT2 / 2, -Math.SQRT2 / 2), 
-    vec3(0, Math.SQRT2 / 2, Math.SQRT2 / 2)
+    vec3(0, 1.7, 5),        
+    vec3(-1, 0, 0),          
+    vec3(0, 1, 0),           
+    vec3(0, 0, 1)            
 );
+
+
+var camera2 = new Camera(
+    vec3(0, 10, 0),  // Position high above the scene
+    vec3(1, 0, 0),   // Right direction
+    vec3(0, 0, -1),  // Up direction
+    vec3(0, -1, 0)   // Looking downward
+);
+
 
 var light1 = new Light(vec3(0,0,0),vec3(0,1,-1),vec4(0.4,0.4,0.4,1.0), vec4(1,1,1,1), vec4(1,1,1,1),0,0,1);
 
-class Drawable{
-    constructor(tx,ty,tz,scale,rotX, rotY, rotZ, amb, dif, sp, sh){
-    	this.tx = tx;
-    	this.ty = ty;
-    	this.tz = tz;
-    	this.scale = scale;
-    	this.modelRotationX = rotX;
-    	this.modelRotationY = rotY;
-    	this.modelRotationZ = rotZ;
-    	this.updateModelMatrix();
-    	
-    	this.matAmbient = amb;
-    	this.matDiffuse = dif;
-    	this.matSpecular = sp;
-    	this.matAlpha = sh;
-    	
-    	
-    }
-    	
-    updateModelMatrix(){
-        let t = translate(this.tx, this.ty, this.tz);		     
-	   		     
-    	let s = scale(this.scale,this.scale,this.scale);
-    	
-    	let rx = rotateX(this.modelRotationX);
-    	let ry = rotateY(this.modelRotationY);
-    	let rz = rotateZ(this.modelRotationZ);
-	
-	this.modelMatrix = mult(t,mult(s,mult(rz,mult(ry,rx))));
-    }
-    
-    getModelMatrix(){
-    	return this.modelMatrix;
-    }
-    
-    setModelMatrix(mm){
-    	this.modelMatrix = mm;
-    }    
-}
-
-var tri;
 var plane;
 var cube;
 var skybox;
 var house;
+var activeCamera = 1;
+var lastFrameTime = 0;
+var modelPath = "models/bound-cow.smf";
+var cowModel;
 
-// Add these variable declarations
-var animal;
-var animalCamera;
-var modelPath = "models/bound-cow.smf"; // Path to your SMF model file
-
-// Update your window.onload function:
-window.onload = function init(){
+window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     gl = canvas.getContext('webgl2');
-    if (!gl) { alert("WebGL 2.0 isn't available"); }
+    if (!gl) { 
+        alert("WebGL 2.0 isn't available"); 
+        return;
+    }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
-    // Create skybox
     skybox = new Skybox();
     
-    // Create plane and house
     plane = new Plane(0, 0, 0, 10, 0, 0, 0);
     house = new House(2, 0, 2, 1, 0, 0, 0);
     
-    // Initialize animal camera
-    animalCamera = new Camera(
-        vec3(0, 1, 4), // Position
-        vec3(1, 0, 0),  // U vector (right)
-        vec3(0, 1, 0),  // V vector (up)
-        vec3(0, 0, -1)  // N vector (looking direction)
+
+    cowModel = new SMFModel(
+        gl,
+        "models/bound-cow.smf", 
+        -2, 50, 2,                
+        0.5,                     
+        0, 0, 0                  
     );
-    
-    // Create animal model
-    animal = new SMFModel(gl, modelPath);
     
     render();
 };
 
-var activeCamera = 1; 
-
-// Function to toggle between cameras
-function toggleCamera() {
-    activeCamera = activeCamera === 1 ? 2 : 1;
-}
-
-// Update render function to include the animal and camera selection
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    // Choose the active camera
-    let currentCamera = activeCamera === 1 ? camera1 : animalCamera;
-    
-    // Position animalCamera to follow the animal
-    animalCamera.vrp = vec3(animal.tx, animal.ty + 0.5, animal.tz);
-    animalCamera.updateCameraMatrix();
-    
-    // Draw skybox with the selected camera
+
+    let currentCamera = (activeCamera === 1) ? camera1 : camera2;
+
+    currentTime = Date.now() * 0.001;
+    deltaTime = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+
+    house.modelRotationY += 30 * deltaTime;
+    house.updateModelMatrix();
+
+    cowModel.draw(currentCamera);
     skybox.draw(currentCamera);
-    
-    // Draw plane and house
-    plane.draw();
-    house.draw();
-    
-    // Draw animal model
-    animal.draw(currentCamera);
-    
-    // Animate animal - move it in a circle
-    let time = Date.now() * 0.001; // Convert to seconds
-    let radius = 3.0; // Radius of circular path
-    animal.tx = radius * Math.cos(time * 0.5);
-    animal.tz = radius * Math.sin(time * 0.5);
-    animal.modelRotationY = (time * 30) % 360; // Rotate the animal
-    animal.updateModelMatrix();
-    
+    plane.draw(currentCamera);
+    house.draw(currentCamera);
+
     requestAnimationFrame(render);
 }
 
@@ -249,10 +194,10 @@ window.addEventListener("keydown", function(event) {
             camera1.u = vec3(tempU6[0], tempU6[1], tempU6[2]);
             camera1.n = vec3(tempN4[0], tempN4[1], tempN4[2]);
             break;
-        case "T":
-            toggleCamera();
         case "t":
-            toggleCamera();
+            activeCamera = (activeCamera === 1) ? 2 : 1;
+            console.log("Switched to Camera", activeCamera);
+            break;
     }
 
     camera1.updateCameraMatrix();

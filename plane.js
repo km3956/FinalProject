@@ -97,7 +97,7 @@ class Plane extends Drawable {
         }
     }
 
-    draw() {
+    draw(camera) {
         if (Plane.texture == -1) return;
 
         gl.useProgram(Plane.shaderProgram);
@@ -110,6 +110,10 @@ class Plane extends Drawable {
         gl.vertexAttribPointer(Plane.aTextureCoordShader, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(Plane.aTextureCoordShader);
 
+
+        gl.uniformMatrix4fv(Plane.uCameraMatrixShader, false, flatten(camera.cameraMatrix));
+        gl.uniformMatrix4fv(Plane.uProjectionMatrixShader, false, flatten(camera.projectionMatrix));
+        
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, Plane.texture);
         gl.uniform1i(Plane.uTextureUnitShader, 0);

@@ -183,17 +183,20 @@ class House extends Drawable {
 
     constructor(tx, ty, tz, scale, rotX, rotY, rotZ, amb, dif, sp, sh) {
         super(tx, ty, tz, scale, rotX, rotY, rotZ, amb, dif, sp, sh);
+        this.rotationSpeed = 30; // degrees per second
         if (House.shaderProgram == -1) {
             House.initialize();
             House.initializeTextures();
         }
     }
 
-    draw() {
+
+    draw(camera) {
         if (House.texture == -1 || House.roofTexture == -1) return;
 
         gl.useProgram(House.shaderProgram);
-
+        this.modelRotationY += this.rotationSpeed * deltaTime;
+        this.updateModelMatrix();
         // Position
         gl.bindBuffer(gl.ARRAY_BUFFER, House.positionBuffer);
         gl.vertexAttribPointer(House.aPositionShader, 3, gl.FLOAT, false, 0, 0);
@@ -218,6 +221,9 @@ class House extends Drawable {
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, House.roofTexture);
         gl.uniform1i(House.uRoofTextureUnitShader, 1);
+
+        gl.uniformMatrix4fv(House.uCameraMatrixShader, false, flatten(camera.cameraMatrix));
+        gl.uniformMatrix4fv(House.uProjectionMatrixShader, false, flatten(camera.projectionMatrix));
 
         // Set uniforms
         gl.uniformMatrix4fv(House.uModelMatrixShader, false, flatten(this.modelMatrix));
